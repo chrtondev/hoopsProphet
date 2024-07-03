@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 import numpy as np
 import joblib
 import private
@@ -99,4 +100,47 @@ def preformLinReg():
     model_filename = 'linear_regression_model.joblib'
     joblib.dump(model, model_filename)
     print(f'Model saved to {model_filename}')
+    
+def preformLogR():
+    year_csv = ['modified_19-20.csv', 'modified_20-21.csv', 'modified_22-23.csv', 'modified_23-24.csv']
+    dir = private.directory()
+
+    # Load all CSV files into a single DataFrame
+    dataframes = []
+    for file in year_csv:
+        file_path = os.path.join(dir, file)
+        df = pd.read_csv(file_path)
+        dataframes.append(df)
+
+    # Concatenate all DataFrames
+    full_df = pd.concat(dataframes, ignore_index=True)
+
+    # Define the features (all columns except 'champ' and 'Team') and the target variable ('champ')
+    X = full_df.drop(columns=['champ', 'Team'])
+    y = full_df['champ']
+
+    # Split the data into training and testing sets, using a time-based split
+    # Assuming the files are ordered from oldest to newest
+    split_index = int(len(full_df) * 0.8)
+    X_train, X_test = X[:split_index], X[split_index:]
+    y_train, y_test = y[:split_index], y[split_index:]
+
+    # Fit a logistic regression model to the training data
+    model = LogisticRegression(max_iter=1000)
+    model.fit(X_train, y_train)
+    
+    # Save the model to a file
+    model_filename = 'logistic_regression_model.joblib'
+    joblib.dump(model, model_filename)
+    print(f'Model saved to {model_filename}')
+    
+    # Extract the coefficients and their corresponding feature names
+    coefficients = model.coef_[0]
+    features = X.columns
+
+    # Create a DataFrame to display the feature importance
+    importance_df = pd.DataFrame({'Feature': features, 'Coefficient': coefficients})
+
+    # Display the coefficients
+    print(importance_df)
     
